@@ -1,0 +1,132 @@
+SortedSet = require './SortedSet'
+ForwardIndex = require './ForwardIndex'
+InvertedIndex = require './InvertedIndex'
+SparseVector = require './SparseVector'
+Tokenizer = require './Tokenizer'
+
+class Index
+	constructor: (@spec) ->
+		@fields = {}
+		@nFields = 0
+		for k, fspec of @spec.fields
+			@fields[k] = new Field(@, fspec)
+			@nFields++
+
+		@documentStore = new ForwardIndex
+		@tokenStore = new InvertedIndex
+		@corpusTokens = new SortedSet
+		@tokenizer = @spec.tokenizer or new Tokenizer
+		@_idfCache = {}
+
+	identify: (doc) -> doc.id
+
+	add: (doc) ->
+		docRef = @identify(doc)
+		docTokens = {}
+		allDocumentTokens = new SortedSet
+
+		for k, field of @fields
+			fieldTokens = @pipeline.run(@tokenizer.run(field.get(doc)))
+			docTokens[field.name] = fieldTokens
+			for token in fieldTokens
+				allDocumentTokens.add(token)
+				@corpusTokens.add(token)
+
+		# Index it in the forward index
+		@documentStore.set(docRef, allDocumentTokens)
+
+		# Compute Term Frequency for each token, then index it in the inverted index
+		for token in allDocumentTokens
+			tf = 0
+			for k, field of @fields
+				fieldTokens = docTokens[field.name]
+				if fieldTokens.length is 0 then continue
+				tokenCount = 0
+				tokenCount++ for fieldToken in fieldTokens when fieldToken is token
+				tf += (tokenCount / fieldTokens.length * field.boost)
+
+			@tokenStore.add(token, docRef, { id: docRef, tf })
+
+		# Clear the idf cache
+		@_idfCache = {}
+
+	removeById: (docRef) ->
+		if not @documentStore.has(docRef) then return
+		docTokens = @documentStore.get(docRef)
+		@documentStore.remove(docRef)
+		@tokenStore.remove(token, docRef) for token in docTokens
+		undefined
+
+	remove: (doc) -> @removeById(@identify(doc))
+
+	update: (doc) -> @remove(doc); @add(doc)
+
+	idf: (term) ->
+		cacheKey = '@' + term
+		if cacheKey of @_idfCache then return @_idfCache[cacheKey]
+
+		df = @tokenStore.count(term)
+		idf = 1
+		if df > 0
+			idf = 1 + Math.log(@documentStore.length / df)
+
+		@_idfCache[cacheKey] = idf
+
+	documentVector: (id) ->
+		# tokens is a SortedSet with all the tokens from the given document
+		tokens = @documentStore.get(id)
+		vector = new SparseVector
+
+		for token in tokens.elements
+			tf = @tokenStore.get(token)[id].tf
+			idf = @idf(token)
+			vector.insert(@corpusTokens.indexOf(token), tf * idf)
+
+		vector
+
+	search: (query) ->
+		tokens = @pipeline.run(@tokenizer.run(query))
+		queryVector = new SparseVector
+		documentSets = []
+		fieldBoosts = 0; fieldBoosts += field.boost for k,field of @fields
+
+		if not queryTokens.some( (token) => @tokenStore.has(token) ) then return []
+
+		# For each token, create a documentSet of documents matching the token.
+		for token in tokens
+			# How is this the term frequency...?????????
+			tf = 1 / ( tokens.length * @nFields * fieldBoosts )
+
+			# For each expansion of the token, score and accumulate matching docs.
+			accumulator = new SortedSet
+			expansions = @tokenStore.expand(token)
+			for expansion in expansions
+				# If token isn't exact match, penalize score.
+				similarityBoost = 1
+				if expansion isnt token
+					diff = Math.max(3, expansion.length - token.length)
+					similarityBoost = 1 / Math.log(diff)
+
+				# Insert a similarity entry in the query vector at the index of this particular
+				# expansion of the token.
+				pos = @corpusTokens.indexOf(expansion)
+				idf = @idf(expansion)
+				if pos > -1
+					queryVector.insert(pos, tf * idf * similarityBoost)
+
+				# Add each matching document to the accumulator.
+				matchingDocuments = @tokenStore.get(expansion)
+				ids = Object.keys(matchingDocuments)
+				accumulator.add(matchingDocuments[id].ref) for id in ids
+
+			# Add documents matching this one token to the documentSets.
+			documentSets.push(accumulator)
+
+		# Intersect all the documentSets ("AND" query)
+		documentSets.reduce( (memo, set) -> memo.intersect(set) )
+		# Scorify each document
+		.map( (id) =>
+			{ id, score: queryVector.similarity(@documentVector(id))}
+		)
+		# Sort by score.
+		.sort( (a,b) -> b.score - a.score )
