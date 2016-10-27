@@ -1,4 +1,4 @@
-class Tokenizer
+module.exports = class Tokenizer
 	constructor: ->
 
 	run: (val) ->

@@ -4,7 +4,7 @@ InvertedIndex = require './InvertedIndex'
 SparseVector = require './SparseVector'
 Tokenizer = require './Tokenizer'
 
-class Index
+module.exports = class FTI
 	constructor: (@spec) ->
 		@fields = {}
 		@nFields = 0

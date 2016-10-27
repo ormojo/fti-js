@@ -25,7 +25,7 @@ class SparseVector
 			prev = next; next = next.next
 
 		prev.next = new Node(idx, val, next)
-		length++
+		@length++
 
 	magnitude: ->
 		if @_magnitude then return @_magnitude

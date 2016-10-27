@@ -15,14 +15,14 @@ class InvertedIndex
 		if not token then return
 		key = token.charAt(0)
 		rest = token.slice(1)
-		if not (key of root) then root[key] = @createNode()
+		if not (key of node) then node[key] = @createNode()
 
 		if rest.length is 0
 			node[key].ids[id] = data
 			@length++
 			undefined
 		else
-			@add(rest, id, node[key])
+			@add(rest, id, data, node[key])
 
 	_getNode: (token, node = @root) ->
 		if not token then return null
@@ -37,7 +37,7 @@ class InvertedIndex
 
 	get: (token, node) -> ((@_getNode(token, node) or {}).ids) or {}
 
-	count: (token, node) -> Object.keys(@get(token.node)).length
+	count: (token, node) -> Object.keys(@get(token, node)).length
 
 	remove: (token, id, node = @root) ->
 		node = @_getNode(token, node)
