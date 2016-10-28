@@ -171,7 +171,9 @@ porterStemmer = (w) ->
 
 	w
 
-module.exports = class EnglishStemmer extends TokenPipelineStage
+class EnglishStemmer extends TokenPipelineStage
 	constructor: ->
 
 	run: (token) -> porterStemmer(token)
+
+module.exports = new EnglishStemmer()

@@ -4,4 +4,4 @@ class Trimmer extends TokenPipelineStage
 	run: (token) ->
 		token.replace(/^\W+/, '').replace(/\W+$/, '')
 
-module.exports = Trimmer
+module.exports = new Trimmer

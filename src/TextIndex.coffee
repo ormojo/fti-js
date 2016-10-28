@@ -3,19 +3,22 @@ ForwardIndex = require './ForwardIndex'
 InvertedIndex = require './InvertedIndex'
 SparseVector = require './SparseVector'
 Tokenizer = require './Tokenizer'
+TokenPipeline = require './TokenPipeline'
+Field = require './Field'
 
-module.exports = class FTI
+module.exports = class TextIndex
 	constructor: (@spec) ->
 		@fields = {}
 		@nFields = 0
 		for k, fspec of @spec.fields
-			@fields[k] = new Field(@, fspec)
+			@fields[k] = new Field(@, fspec, k)
 			@nFields++
 
 		@documentStore = new ForwardIndex
 		@tokenStore = new InvertedIndex
 		@corpusTokens = new SortedSet
 		@tokenizer = @spec.tokenizer or new Tokenizer
+		@pipeline = @spec.pipeline or new TokenPipeline
 		@_idfCache = {}
 
 	identify: (doc) -> doc.id
@@ -36,7 +39,7 @@ module.exports = class FTI
 		@documentStore.set(docRef, allDocumentTokens)
 
 		# Compute Term Frequency for each token, then index it in the inverted index
-		for token in allDocumentTokens
+		for token in allDocumentTokens.elements
 			tf = 0
 			for k, field of @fields
 				fieldTokens = docTokens[field.name]
@@ -49,6 +52,7 @@ module.exports = class FTI
 
 		# Clear the idf cache
 		@_idfCache = {}
+		undefined
 
 	removeById: (docRef) ->
 		if not @documentStore.has(docRef) then return
@@ -84,13 +88,13 @@ module.exports = class FTI
 
 		vector
 
-	search: (query) ->
+	search: (query, operator = "AND") ->
 		tokens = @pipeline.run(@tokenizer.run(query))
 		queryVector = new SparseVector
 		documentSets = []
 		fieldBoosts = 0; fieldBoosts += field.boost for k,field of @fields
 
-		if not queryTokens.some( (token) => @tokenStore.has(token) ) then return []
+		if not tokens.some( (token) => @tokenStore.has(token) ) then return []
 
 		# For each token, create a documentSet of documents matching the token.
 		for token in tokens
@@ -117,16 +121,21 @@ module.exports = class FTI
 				# Add each matching document to the accumulator.
 				matchingDocuments = @tokenStore.get(expansion)
 				ids = Object.keys(matchingDocuments)
-				accumulator.add(matchingDocuments[id].ref) for id in ids
+				for id in ids
+					accumulator.add(matchingDocuments[id].id)
 
 			# Add documents matching this one token to the documentSets.
 			documentSets.push(accumulator)
 
-		# Intersect all the documentSets ("AND" query)
-		documentSets.reduce( (memo, set) -> memo.intersect(set) )
+		# Intersect all the documentSets ("AND" query) or union ("OR" query)
+		reducer = if operator is 'AND'
+			(memo, set) -> memo.intersect(set)
+		else
+			(memo, set) -> memo.union(set)
+
+
+		documentSets.reduce( reducer )
 		# Scorify each document
 		.map( (id) =>
 			{ id, score: queryVector.similarity(@documentVector(id))}
 		)
-		# Sort by score.
-		.sort( (a,b) -> b.score - a.score )
