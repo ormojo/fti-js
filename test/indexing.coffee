@@ -1,12 +1,6 @@
 { expect } = require 'chai'
 
-TextIndex = require '../src/TextIndex'
-EnglishStemmer = require '../src/EnglishStemmer'
-EnglishStopWordFilter = require '../src/EnglishStopWordFilter'
-Tokenizer = require '../src/Tokenizer'
-TokenPipeline = require '../src/TokenPipeline'
-Trimmer = require '../src/Trimmer'
-PrefixNgram = require '../src/PrefixNgram'
+{ TextIndex } = require '..'
 
 describe 'index testing', ->
 	it 'should do stuff', ->
@@ -31,3 +25,9 @@ describe 'index testing', ->
 		console.log idx.search('sec fi')
 		console.log idx.search('sec fi', 'OR')
 		console.log idx.search('sec first aardvark', 'OR')
+
+		idx.removeById('second')
+		idx.removeById('first')
+
+		# SHould be empty
+		console.log idx.search('first')

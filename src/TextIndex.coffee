@@ -14,6 +14,9 @@ module.exports = class TextIndex
 			@fields[k] = new Field(@, fspec, k)
 			@nFields++
 
+		@initialize()
+
+	initialize: ->
 		@documentStore = new ForwardIndex
 		@tokenStore = new InvertedIndex
 		@corpusTokens = new SortedSet
@@ -57,13 +60,16 @@ module.exports = class TextIndex
 	removeById: (docRef) ->
 		if not @documentStore.has(docRef) then return
 		docTokens = @documentStore.get(docRef)
+		for token in docTokens.elements
+			@tokenStore.remove(token, docRef)
 		@documentStore.remove(docRef)
-		@tokenStore.remove(token, docRef) for token in docTokens
 		undefined
 
 	remove: (doc) -> @removeById(@identify(doc))
 
 	update: (doc) -> @remove(doc); @add(doc)
+
+	clear: -> @initialize()
 
 	idf: (term) ->
 		cacheKey = '@' + term

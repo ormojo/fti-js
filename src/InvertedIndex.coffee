@@ -40,8 +40,7 @@ class InvertedIndex
 	count: (token, node) -> Object.keys(@get(token, node)).length
 
 	remove: (token, id, node = @root) ->
-		node = @_getNode(token, node)
-		if not node then return
+		if not (node = @_getNode(token, node)) then return
 		delete node.ids[id]
 
 	expand: (token, memo = []) ->
