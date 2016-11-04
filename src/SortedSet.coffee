@@ -11,7 +11,7 @@ class SortedSet
 
 	toArray: -> @elements.slice()
 	map: -> @elements.map.apply(@elements, arguments)
-	foreach: -> @elements.foreach.apply(@elements, arguments)
+	forEach: -> @elements.forEach.apply(@elements, arguments)
 
 	indexOf: (elem) ->
 		start = 0

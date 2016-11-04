@@ -1,6 +1,6 @@
 {
   "name": "ormojo-fti",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "A lightweight fulltext indexer based on lunr.js.",
 	"main": "lib/index.js",
   "module": "es/index.js",
@@ -52,5 +52,7 @@
     "rimraf": "^2.5.4"
   },
   "dependencies": {},
-  "peerDependencies": {}
+  "peerDependencies": {
+		"ormojo": "^0.1.0"
+	}
 }

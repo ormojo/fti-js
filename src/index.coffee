@@ -12,4 +12,5 @@ module.exports = {
 	TokenPipelineStage: require './TokenPipelineStage'
 	Trimmer: require './Trimmer'
 	ReducibleIndexer: (require './ReducibleIndexer').default
+	SubjectSearcher: (require './SubjectSearcher').default
 }

@@ -94,7 +94,9 @@ module.exports = class TextIndex
 
 		vector
 
-	search: (query, operator = "AND") ->
+	search: (options = {}) ->
+		query = options.query
+		operator = options.operator or 'AND'
 		tokens = @pipeline.run(@tokenizer.run(query))
 		queryVector = new SparseVector
 		documentSets = []
@@ -139,9 +141,13 @@ module.exports = class TextIndex
 		else
 			(memo, set) -> memo.union(set)
 
+		finalSet = documentSets.reduce(reducer)
 
-		documentSets.reduce( reducer )
-		# Scorify each document
-		.map( (id) =>
-			{ id, score: queryVector.similarity(@documentVector(id))}
-		)
+		if options.resultFormat is 'scoreMap'
+			results = {}
+			finalSet.forEach (id) =>
+				results[id] = queryVector.similarity(@documentVector(id))
+			results
+		else
+			finalSet.map (id) =>
+				{ id, score: queryVector.similarity(@documentVector(id)) }
