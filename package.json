@@ -1,22 +1,30 @@
 {
-  "name": "fti-js",
+  "name": "ormojo-fti",
   "version": "0.0.2",
   "description": "A lightweight fulltext indexer based on lunr.js.",
-  "main": "lib/index.js",
+	"main": "lib/index.js",
+  "module": "es/index.js",
+  "jsnext:main": "es/index.js",
   "scripts": {
-    "clean": "rimraf lib build es coverage",
-    "build:coffee": "mkdir -p lib && coffee -o lib src/*.coffee",
-    "build": "npm run build:coffee",
-    "doc": "node_modules/.bin/codo src/",
+		"clean": "rimraf lib build es coverage",
+    "build": "npm run build:coffee && npm run build:babel:commonjs && npm run build:babel:es",
+    "build:babel:commonjs": "cross-env BABEL_ENV=commonjs babel build --out-dir lib",
+    "build:babel:es": "cross-env BABEL_ENV=es babel build --out-dir es",
+    "build:coffee": "mkdir -p build && coffee -o build src/*.coffee",
+		"doc:build": "node_modules/.bin/codo src/",
     "prepublish": "npm run clean && npm run build",
     "test": "node_modules/.bin/mocha --recursive --compilers coffee:coffee-script/register",
-    "coverage:build": "node_modules/.bin/mocha --recursive --compilers coffee:coffee-script/register --require coffee-coverage/register-istanbul",
+		"test:debug": "node --inspect --debug-brk node_modules/.bin/_mocha --recursive --compilers coffee:coffee-script/register",
+		"coverage:build": "node_modules/.bin/mocha --recursive --compilers coffee:coffee-script/register --require coffee-coverage/register-istanbul",
     "coverage:report": "node_modules/.bin/istanbul report",
-    "coverage": "npm run coverage:build && npm run coverage:report"
+    "coverage": "npm run coverage:build && npm run coverage:report",
+    "precommit": "npm run prepublish && npm run test",
+    "postcheckout": "npm install",
+    "postmerge": "npm install"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ormojo/fti-js.git"
+    "url": "https://github.com/ormojo/ormojo-fti.git"
   },
   "keywords": [
     "fulltext",
@@ -27,14 +35,18 @@
   "author": "William C. Johnson <wcjohnson@oigroup.net> (https://github.com/wcjohnson)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ormojo/fti-js/issues"
+    "url": "https://github.com/ormojo/ormojo-fti/issues"
   },
-  "homepage": "https://github.com/ormojo/fti-js",
+  "homepage": "https://github.com/ormojo/ormojo-fti",
   "devDependencies": {
+		"babel-cli": "^6.18.0",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.18.0",
     "chai": "^3.5.0",
     "codo": "^2.1.2",
     "coffee-coverage": "^1.0.1",
     "coffee-script": "^1.11.1",
+    "cross-env": "^3.1.3",
+    "husky": "^0.11.9",
     "istanbul": "^0.4.5",
     "mocha": "^2.4.5",
     "rimraf": "^2.5.4"

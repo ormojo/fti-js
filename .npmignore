@@ -1,12 +1,9 @@
-.git*
-docs/
-*.swp
-.DS_Store
-src/
 coverage/
-scripts/
 build/
-book.json
+src/
+doc/
+node_modules/
 coffeelint.json
-.eslintrc
+.git*
+.editorconfig
 .babelrc

@@ -1,11 +1,11 @@
 /node_modules
 /build
-/lib
 /coverage
 /doc
 /logs
+/es
+/lib
 npm-debug.log
-/js
 
 .v8flags.*
 .npm/
