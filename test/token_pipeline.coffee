@@ -9,11 +9,6 @@ PrefixNgram = require '../src/PrefixNgram'
 
 describe 'TokenPipeline', ->
 	izer = new Tokenizer()
-	line = new TokenPipeline()
-	line.addStage(Trimmer)
-	line.addStage(EnglishStopWordFilter)
-	line.addStage(EnglishStemmer)
-	line.addStage(new PrefixNgram(10))
 
 	it 'tokenizes', ->
 		rst = izer.run('what who where')
@@ -39,6 +34,11 @@ describe 'TokenPipeline', ->
 		rst = tl.run(['the', 'quick', 'brown', 'fox'])
 		expect(rst).to.deep.equal(['quick', 'brown', 'fox'])
 
-	it 'should do some stuff', ->
+	it 'deep pipeline', ->
+		line = new TokenPipeline()
+		line.addStage(Trimmer)
+		line.addStage(EnglishStopWordFilter)
+		line.addStage(EnglishStemmer)
+		line.addStage(new PrefixNgram(10))
 		rst = line.run(izer.run('the rain in spain falls mainly on the plain concerning pain trains steadfastly quickly slowly imploding antidisestablishmentarianism'))
 		console.log rst

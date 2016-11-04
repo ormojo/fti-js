@@ -3,7 +3,7 @@
 { TextIndex } = require '..'
 
 describe 'index testing', ->
-	it 'should do stuff', ->
+	it 'should do basic indexing', ->
 		idx = new TextIndex({
 			fields: {
 				text: { }
@@ -20,14 +20,14 @@ describe 'index testing', ->
 			text: "this is the second document cow"
 		})
 
-		console.log idx.search('second')
-		console.log idx.search('thi')
-		console.log idx.search('sec fi')
-		console.log idx.search('sec fi', 'OR')
-		console.log idx.search('sec first aardvark', 'OR')
+		expect(idx.search({query: 'second'}).length).to.equal(1)
+		expect(idx.search({query: 'thi'}).length).to.equal(2)
+		expect(idx.search({query: 'sec fi'}).length).to.equal(0)
+		expect(idx.search({query: 'sec fi', operator: 'OR'}).length).to.equal(2)
+		expect(idx.search({query: 'sec first aardvark', operator: 'OR'}).length).to.equal(2)
 
 		idx.removeById('second')
 		idx.removeById('first')
 
 		# SHould be empty
-		console.log idx.search('first')
+		expect(idx.search({query: 'this'}).length).to.equal(0)
