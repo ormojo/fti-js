@@ -5,6 +5,7 @@ import { Reducible } from 'ormojo'
 # CRUD action into the given fulltext index.
 export default class ReducibleIndexer extends Reducible
 	constructor: (@index) ->
+		super()
 
 	reduce: (action) ->
 		switch action.type
